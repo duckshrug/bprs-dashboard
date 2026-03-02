@@ -1,12 +1,44 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
 import { Article, STAGES } from '../types'
+
+function AnimatedCount({ value, color }: { value: number; color: string }) {
+  const [display, setDisplay] = useState(value)
+  const prevRef = useRef(value)
+
+  useEffect(() => {
+    if (prevRef.current === value) return
+    const from = prevRef.current
+    const to = value
+    const start = performance.now()
+    const duration = 300
+
+    const animate = (now: number) => {
+      const elapsed = now - start
+      const progress = Math.min(elapsed / duration, 1)
+      // Ease out
+      const eased = 1 - Math.pow(1 - progress, 3)
+      setDisplay(Math.round(from + (to - from) * eased))
+      if (progress < 1) requestAnimationFrame(animate)
+    }
+
+    requestAnimationFrame(animate)
+    prevRef.current = value
+  }, [value])
+
+  return (
+    <span className="text-2xl font-bold transition-all" style={{ color }}>
+      {display}
+    </span>
+  )
+}
 
 export default function PipelineOverview({ articles }: { articles: Article[] }) {
   return (
     <div className="mb-8">
       <h2 className="text-lg font-semibold text-gray-300 mb-4">Pipeline</h2>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 overflow-x-auto pb-2">
         {STAGES.map((stage, i) => {
           const count = articles.filter(a => a.stage === stage.num).length
           return (
@@ -26,12 +58,7 @@ export default function PipelineOverview({ articles }: { articles: Article[] }) 
                 </div>
                 <div className="text-xs text-gray-400 mt-1">{stage.owner}</div>
                 <div className="mt-2">
-                  <span
-                    className="text-2xl font-bold"
-                    style={{ color: stage.color }}
-                  >
-                    {count}
-                  </span>
+                  <AnimatedCount value={count} color={stage.color} />
                   <span className="text-xs text-gray-500 ml-1">article{count !== 1 ? 's' : ''}</span>
                 </div>
               </div>

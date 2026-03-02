@@ -1,5 +1,5 @@
 import { getArticle, updateArticle } from '../../lib/store'
-import { CKHistoryEntry, Stage, Status } from '../../types'
+import { CKHistoryEntry, Stage, StageHistoryEntry, Status } from '../../types'
 
 export async function POST(request: Request) {
   const body = await request.json()
@@ -43,11 +43,27 @@ export async function POST(request: Request) {
     stagePatch = { status: 'on-hold' }
   }
 
+  // Build stage history entry
+  const stageHistory = article.history || []
+  const newStage = stagePatch.stage || article.stage
+  let stageHistoryUpdate = stageHistory
+  if (newStage !== article.stage) {
+    const stageEntry: StageHistoryEntry = {
+      from: article.stage,
+      to: newStage,
+      by: 'CK',
+      at: now,
+      note: note || '',
+    }
+    stageHistoryUpdate = [...stageHistory, stageEntry]
+  }
+
   const updated = await updateArticle(articleId, {
     ckResponse: response as 'A' | 'E' | 'H',
     ckNote: note || '',
     ckRespondedAt: now,
     ckHistory,
+    history: stageHistoryUpdate,
     updatedAt: now,
     ...stagePatch,
   })

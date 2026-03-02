@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Article } from '../types'
 import PipelineOverview from '../components/PipelineOverview'
 import ArticleTable from '../components/ArticleTable'
@@ -12,14 +12,16 @@ export default function DashboardPage() {
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetch('/api/articles')
-      .then(r => r.json())
-      .then(data => {
-        setArticles(data)
-        setLoading(false)
-      })
+  const fetchArticles = useCallback(async () => {
+    const r = await fetch('/api/articles')
+    const data = await r.json()
+    setArticles(data)
+    setLoading(false)
   }, [])
+
+  useEffect(() => {
+    fetchArticles()
+  }, [fetchArticles])
 
   if (loading) {
     return (
@@ -48,7 +50,7 @@ export default function DashboardPage() {
         <HoldAlert articles={articles} />
         <CKActivityFeed articles={articles} />
         <PipelineOverview articles={articles} />
-        <ArticleTable articles={articles} />
+        <ArticleTable articles={articles} onRefresh={fetchArticles} />
         <BatchSummary articles={articles} />
       </div>
     </main>

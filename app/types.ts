@@ -45,6 +45,14 @@ export interface CKHistoryEntry {
   at: string
 }
 
+export interface StageHistoryEntry {
+  from: Stage
+  to: Stage
+  by: string
+  at: string
+  note: string
+}
+
 export interface Article {
   id: string
   title: string
@@ -57,6 +65,7 @@ export interface Article {
   ckNote: string
   ckRespondedAt?: string
   ckHistory?: CKHistoryEntry[]
+  history?: StageHistoryEntry[]
   googleDocUrl: string
   wordpressUrl: string
   updatedAt: string
@@ -83,9 +92,29 @@ export const STATUS_COLORS: Record<Status, string> = {
   'published': '#8b5cf6',
 }
 
+// Stage transition rules: maps current stage to available actions
+export interface StageAction {
+  label: string
+  nextStage: Stage
+  newOwner: string
+  newStatus: Status
+}
+
+export const STAGE_ACTIONS: Record<number, StageAction[]> = {
+  1: [{ label: 'Send to MK Edit', nextStage: 2, newOwner: 'MK', newStatus: 'ready' }],
+  2: [{ label: 'Send to CK Approval', nextStage: 3, newOwner: 'CK', newStatus: 'ready' }],
+  // Stage 3 uses CK Approval Panel instead
+  4: [{ label: 'Send to Publish', nextStage: 5, newOwner: 'Rey', newStatus: 'ready' }],
+  5: [{ label: 'Published', nextStage: 6, newOwner: 'Rey / Qua', newStatus: 'published' }],
+}
+
 export function getSEOScore(obj: EditorialSEO | TechnicalSEO | AEOSEO): { done: number; total: number } {
   const entries = Object.entries(obj)
   const boolKeys = entries.filter(([, v]) => typeof v === 'boolean')
   const done = boolKeys.filter(([, v]) => v === true).length
   return { done, total: boolKeys.length }
+}
+
+export function getStageName(stage: Stage): string {
+  return STAGES.find(s => s.num === stage)?.name || `Stage ${stage}`
 }
