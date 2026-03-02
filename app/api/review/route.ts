@@ -36,9 +36,9 @@ export async function POST(request: Request) {
 
   let stagePatch: { stage?: Stage; status: Status; owner?: string }
   if (response === 'A') {
-    stagePatch = { stage: 4, status: 'approved', owner: 'Qua' }
+    stagePatch = { stage: 4, status: 'approved', owner: 'JJ + Claude' }
   } else if (response === 'E') {
-    stagePatch = { stage: 2, status: 'edit-requested', owner: 'MK' }
+    stagePatch = { stage: 2, status: 'edit-requested', owner: 'Rey + MK' }
   } else {
     stagePatch = { status: 'on-hold' }
   }

@@ -1,6 +1,6 @@
 export type Stream = 'rewrites-30' | 'rewrites-3' | 'new-batch-1' | 'future'
 export type Batch = 'batch-1' | 'batch-2' | 'batch-3' | 'none'
-export type Stage = 1 | 2 | 3 | 4 | 5 | 6
+export type Stage = 0 | 1 | 2 | 3 | 4 | 5 | 6
 export type Status = 'in-progress' | 'ready' | 'approved' | 'edit-requested' | 'on-hold' | 'published'
 export type CKResponse = 'A' | 'E' | 'H' | null
 
@@ -75,12 +75,13 @@ export interface Article {
 }
 
 export const STAGES = [
-  { num: 1, name: 'Draft & Humanize', owner: 'Qua', color: '#22c55e' },
-  { num: 2, name: 'MK Edit & Approve', owner: 'MK', color: '#f59e0b' },
+  { num: 0, name: 'Research', owner: 'MK / Rey / JJ', color: '#64748b' },
+  { num: 1, name: 'Draft', owner: 'Claude + MK', color: '#22c55e' },
+  { num: 2, name: 'Edit Pass 1', owner: 'Rey + MK', color: '#f59e0b' },
   { num: 3, name: 'CK Approval', owner: 'CK', color: '#ef4444' },
-  { num: 4, name: 'Pre-Publish Prep', owner: 'Qua', color: '#3b82f6' },
-  { num: 5, name: 'Publish to WP', owner: 'Rey', color: '#8b5cf6' },
-  { num: 6, name: 'Post-Publish', owner: 'Rey / Qua', color: '#ec4899' },
+  { num: 4, name: 'Pre-Publish', owner: 'JJ + Claude', color: '#3b82f6' },
+  { num: 5, name: 'Publish', owner: 'MK', color: '#8b5cf6' },
+  { num: 6, name: 'Post-Publish', owner: 'Rey / Qua / MK', color: '#ec4899' },
 ] as const
 
 export const STATUS_COLORS: Record<Status, string> = {
@@ -101,11 +102,12 @@ export interface StageAction {
 }
 
 export const STAGE_ACTIONS: Record<number, StageAction[]> = {
-  1: [{ label: 'Send to MK Edit', nextStage: 2, newOwner: 'MK', newStatus: 'ready' }],
+  0: [{ label: 'Send to Draft', nextStage: 1, newOwner: 'Claude + MK', newStatus: 'ready' }],
+  1: [{ label: 'Send to Edit Pass', nextStage: 2, newOwner: 'Rey + MK', newStatus: 'ready' }],
   2: [{ label: 'Send to CK Approval', nextStage: 3, newOwner: 'CK', newStatus: 'ready' }],
   // Stage 3 uses CK Approval Panel instead
-  4: [{ label: 'Send to Publish', nextStage: 5, newOwner: 'Rey', newStatus: 'ready' }],
-  5: [{ label: 'Published', nextStage: 6, newOwner: 'Rey / Qua', newStatus: 'published' }],
+  4: [{ label: 'Send to Publish', nextStage: 5, newOwner: 'MK', newStatus: 'ready' }],
+  5: [{ label: 'Published', nextStage: 6, newOwner: 'Rey / Qua / MK', newStatus: 'published' }],
 }
 
 export function getSEOScore(obj: EditorialSEO | TechnicalSEO | AEOSEO): { done: number; total: number } {
