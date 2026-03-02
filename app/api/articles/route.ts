@@ -1,5 +1,6 @@
 import { getArticles } from '../../lib/store'
 
 export async function GET() {
-  return Response.json(getArticles())
+  const articles = await getArticles()
+  return Response.json(articles)
 }

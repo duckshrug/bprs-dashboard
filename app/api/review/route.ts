@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Note required for Edit response' }, { status: 400 })
   }
 
-  const article = getArticle(articleId)
+  const article = await getArticle(articleId)
   if (!article) {
     return Response.json({ error: 'Article not found' }, { status: 404 })
   }
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     stagePatch = { status: 'on-hold' }
   }
 
-  const updated = updateArticle(articleId, {
+  const updated = await updateArticle(articleId, {
     ckResponse: response as 'A' | 'E' | 'H',
     ckNote: note || '',
     ckRespondedAt: now,

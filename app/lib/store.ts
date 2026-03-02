@@ -1,28 +1,28 @@
+import { kv } from '@vercel/kv'
 import seedData from '../../data/articles.json'
 import { Article } from '../types'
 
-let articles: Article[] | null = null
+const KV_KEY = 'bprs:articles'
 
-function init() {
-  if (!articles) {
-    articles = JSON.parse(JSON.stringify(seedData)) as Article[]
-  }
+export async function getArticles(): Promise<Article[]> {
+  const stored = await kv.get<Article[]>(KV_KEY)
+  if (stored) return stored
+  // First access: seed from JSON
+  const seed = JSON.parse(JSON.stringify(seedData)) as Article[]
+  await kv.set(KV_KEY, seed)
+  return seed
 }
 
-export function getArticles(): Article[] {
-  init()
-  return articles!
+export async function getArticle(id: string): Promise<Article | undefined> {
+  const articles = await getArticles()
+  return articles.find(a => a.id === id)
 }
 
-export function getArticle(id: string): Article | undefined {
-  init()
-  return articles!.find(a => a.id === id)
-}
-
-export function updateArticle(id: string, patch: Partial<Article>): Article | null {
-  init()
-  const idx = articles!.findIndex(a => a.id === id)
+export async function updateArticle(id: string, patch: Partial<Article>): Promise<Article | null> {
+  const articles = await getArticles()
+  const idx = articles.findIndex(a => a.id === id)
   if (idx === -1) return null
-  articles![idx] = { ...articles![idx], ...patch }
-  return articles![idx]
+  articles[idx] = { ...articles[idx], ...patch }
+  await kv.set(KV_KEY, articles)
+  return articles[idx]
 }
