@@ -34,22 +34,26 @@ export default function DashboardPage() {
   return (
     <main className="min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex items-center justify-center gap-5">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-2 h-8 rounded-full bg-blue-500" />
-              <h1 className="text-2xl font-bold text-white">BPRS Publishing Dashboard</h1>
-            </div>
-            <p className="text-sm text-gray-500 ml-5">
-              Blueprint Resolution Services &middot; Content Pipeline Tracker
-            </p>
+            <h1 className="text-2xl font-bold text-white leading-tight">BPRS Content<br />Pipeline Tracker</h1>
           </div>
-          <a href="/" className="text-xs text-gray-500 hover:text-gray-300 transition">&larr; Home</a>
+          <div className="w-20 h-20 rounded-full border-2 border-blue-500/40 overflow-hidden shrink-0">
+            <img
+              src="/blueper-logo.png"
+              alt="Blueper"
+              className="w-full h-[160%] object-cover object-top"
+            />
+          </div>
         </div>
 
         <HoldAlert articles={articles} />
-        <CKActivityFeed articles={articles} />
         <PipelineOverview articles={articles} />
+        <CKActivityFeed articles={articles} onClear={async () => {
+          if (!confirm('Clear all activity? Articles stay at their current stages.')) return
+          await fetch('/api/articles/clear-activity', { method: 'POST' })
+          fetchArticles()
+        }} />
         <ArticleTable articles={articles} onRefresh={fetchArticles} />
         <BatchSummary articles={articles} />
       </div>

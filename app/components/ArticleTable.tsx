@@ -207,16 +207,37 @@ function StageActions({ article, onAdvance }: {
   if (!actions || actions.length === 0) return null
 
   return (
-    <div className="border-t border-white/10 pt-3 mt-3">
-      <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Actions</div>
-      <div className="flex gap-2">
-        {actions.map(action => (
+    <div className="flex gap-2">
+      {actions.map(action => (
+        <button
+          key={action.label}
+          onClick={() => onAdvance(action)}
+          className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition"
+        >
+          {action.label} &rarr;
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// --- Manual Stage Move ---
+function ManualStageMove({ article, onMove }: {
+  article: Article
+  onMove: (targetStage: Stage) => void
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-gray-500">Move to:</span>
+      <div className="flex gap-1.5 flex-wrap">
+        {STAGES.filter(s => s.num !== article.stage).map(s => (
           <button
-            key={action.label}
-            onClick={() => onAdvance(action)}
-            className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition"
+            key={s.num}
+            onClick={() => onMove(s.num as Stage)}
+            className="px-2.5 py-1 rounded text-[11px] font-medium border border-white/10 text-gray-400 hover:text-white hover:border-white/30 transition"
+            style={{ backgroundColor: `${s.color}10` }}
           >
-            {action.label} &rarr;
+            {s.num}. {s.name}
           </button>
         ))}
       </div>
@@ -272,6 +293,7 @@ export default function ArticleTable({ articles, onRefresh }: { articles: Articl
   const [filterOwner, setFilterOwner] = useState<string>('all')
   const [confirmAction, setConfirmAction] = useState<{ article: Article; action: StageAction } | null>(null)
   const [confirmCK, setConfirmCK] = useState<{ article: Article; response: 'A' | 'E' | 'H'; note: string } | null>(null)
+  const [confirmManual, setConfirmManual] = useState<{ article: Article; targetStage: Stage } | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [acting, setActing] = useState(false)
 
@@ -332,6 +354,28 @@ export default function ArticleTable({ articles, onRefresh }: { articles: Articl
     }
   }
 
+  const handleManualMove = async (article: Article, targetStage: Stage) => {
+    setActing(true)
+    const stageInfo = STAGES.find(s => s.num === targetStage)
+    try {
+      await fetch(`/api/articles/${article.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          stage: targetStage,
+          status: 'ready' as Status,
+          owner: stageInfo?.owner || article.owner,
+          updatedAt: new Date().toISOString(),
+        }),
+      })
+      setToast(`Article moved to ${getStageName(targetStage)}`)
+      onRefresh?.()
+    } finally {
+      setActing(false)
+      setConfirmManual(null)
+    }
+  }
+
   return (
     <div className="mb-8">
       {/* Confirmation dialog */}
@@ -349,6 +393,14 @@ export default function ArticleTable({ articles, onRefresh }: { articles: Articl
           message={`${confirmCK.response === 'A' ? 'Approve' : confirmCK.response === 'E' ? 'Request edit for' : 'Hold'} "${confirmCK.article.title}"?`}
           onCancel={() => setConfirmCK(null)}
           onConfirm={() => handleCKAction(confirmCK.article, confirmCK.response, confirmCK.note)}
+        />
+      )}
+      {confirmManual && (
+        <ConfirmDialog
+          title="Move Article"
+          message={`Move "${confirmManual.article.title}" to ${getStageName(confirmManual.targetStage)}?`}
+          onCancel={() => setConfirmManual(null)}
+          onConfirm={() => handleManualMove(confirmManual.article, confirmManual.targetStage)}
         />
       )}
       {toast && <Toast message={toast} onDone={() => setToast(null)} />}
@@ -470,13 +522,20 @@ export default function ArticleTable({ articles, onRefresh }: { articles: Articl
                           />
                         )}
 
-                        {/* Other stages: Action buttons */}
-                        {article.stage !== 3 && (
-                          <StageActions
+                        {/* Actions bar */}
+                        <div className="border-t border-white/10 pt-3 mt-3 space-y-3">
+                          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</div>
+                          {article.stage !== 3 && (
+                            <StageActions
+                              article={article}
+                              onAdvance={(action) => setConfirmAction({ article, action })}
+                            />
+                          )}
+                          <ManualStageMove
                             article={article}
-                            onAdvance={(action) => setConfirmAction({ article, action })}
+                            onMove={(targetStage) => setConfirmManual({ article, targetStage })}
                           />
-                        )}
+                        </div>
 
                         {/* Stage History Timeline */}
                         <StageTimeline article={article} />
@@ -551,12 +610,19 @@ export default function ArticleTable({ articles, onRefresh }: { articles: Articl
                     />
                   )}
 
-                  {article.stage !== 3 && (
-                    <StageActions
+                  <div className="border-t border-white/10 pt-3 mt-3 space-y-3">
+                    <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Actions</div>
+                    {article.stage !== 3 && (
+                      <StageActions
+                        article={article}
+                        onAdvance={(action) => setConfirmAction({ article, action })}
+                      />
+                    )}
+                    <ManualStageMove
                       article={article}
-                      onAdvance={(action) => setConfirmAction({ article, action })}
+                      onMove={(targetStage) => setConfirmManual({ article, targetStage })}
                     />
-                  )}
+                  </div>
 
                   <StageTimeline article={article} />
                 </div>
